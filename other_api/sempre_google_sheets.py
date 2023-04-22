@@ -1,61 +1,127 @@
-import re
-import pygsheets
+from abc import ABC
+from typing import List, Dict
+from pygsheets.client import Client
+from pygsheets.spreadsheet import Spreadsheet
+from pygsheets import authorize, Cell
 from random import choice
-from datetime import datetime
-from config import sempre_menu_url
+from datetime import datetime, timedelta
+import re
 
 
-class SempreSchedule:
+class GoogleSheet(ABC):
+    """
+    Abstract GoogleSheet class
+
+    :param: sheet_url (str): takes in google sheet url
+
+    :arg: google_sheet_client (Client): contains authorized Client
+    :arg: google_sheet_url (str): contains Google sheet url
+    """
+
+    def __init__(self, sheet_url: str) -> None:
+        self.google_sheet_client: Client = authorize(service_file='google_credentials.json')
+        self.google_sheet_url: str = sheet_url
+
+    def get_first_sheet(self):
+        """
+        Method to get fist sheet of requested Google sheet
+
+        :return: sheet
+        :rtype: Spreadsheet.sheet1
+        """
+        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
+        return sheet
+
+
+class SempreSchedule(GoogleSheet):
+    """
+    Schedule sheet class. Parent: GoogleSheet
+
+    Attributes:
+        worker_search_scenarios (Dict): contains ('worker': 'search pattern')
+        emoji_list List[str]: contains list of emojis
+
+    :param: sempre_schedule_url (str): takes in schedule Google sheet url.
+
+    :arg: google_sheet_client (Client): contains authorized Client
+    :arg: google_sheet_url (str): contains Google sheet url
+    """
+    worker_search_scenarios: Dict = {
+        'Хостес': r'.*хостес|оператор|вызывные\b.*',
+        'Официанты': r'.*официант\b.*|.*стаж[её]р\b.*',
+        'Раннеры': r'.*официанта\b.*',
+        'Клининг': r'.*уборщица\b.*',
+        'Грузчики': r'.*котломойщик\b.*',
+    }
+    emoji_list: List[str] = [
+        '\U0001F973', '\U0001F60E', '\U0001F340',
+        '\U0001F354', '\U0001F370', '\U0001F379',
+        '\U0001F378', '\U0001F377',
+        '\U0001F37E', '\U0001F37A'
+    ]
 
     def __init__(self, sempre_schedule_url: str) -> None:
-        self.google_sheet_client = pygsheets.authorize(service_file='google_credentials.json')
-        self.google_sheet_url = sempre_schedule_url
-        self.worker_search_scenarios = {
-                                 'хостес': r'.*хостес|оператор|вызывные\b.*',
-                                 'официанты': r'.*официант\b.*|.*стаж[её]р\b.*',
-                                 'раннеры': r'.*официанта\b.*',
-                                 'клининг': r'.*уборщица\b.*',
-                                 'грузчики': r'.*котломойщик\b.*',
-                                 }
-        self.emoji_list = [
-                            '\U0001F973', '\U0001F60E', '\U0001F340',
-                            '\U0001F354', '\U0001F370', '\U0001F379',
-                            '\U0001F378', '\U0001F377',
-                            '\U0001F37E', '\U0001F37A'
-                          ]
+        super().__init__(sheet_url=sempre_schedule_url)
 
-    def search_workers(self, worker, date, search_col=1):
-        day_name = 'Сегодня' if date == datetime.now().day else 'Завтра'
-        date_shift = 2
-        worker = worker.lower()
-        date_col = int(date.day)
-        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
-        shift_dict = {}
+    def search_workers(self,
+                       worker: str,
+                       date: int,
+                       title_col: int = 1,
+                       name_col: int = 2,
+                       date_shift: int = 2
+                       ) -> str:
+        """
+        Method to read requested data from Google sheets and compile it into requested output format
 
-        find_cell = sheet.find(
-                               self.worker_search_scenarios.get(worker),
-                               re.IGNORECASE,
-                               matchEntireCell=True,
-                               cols=(search_col, search_col)
-                               )
+        :param: worker (str): takes in title of workers
+        :param: date (int): takes in requested day number
 
-        for cell in find_cell:
-            time = sheet.get_value((cell.row, date_col + date_shift))
-            if worker == 'официанты':
-                name = sheet.get_value((cell.row, 2)).split(' ')[0]
+        :keyword: title_col (int): takes in job titles column
+        :keyword: name_col (int): takes in workers names column
+        :keyword: date_shift (int): takes in shift of date columns from first column
+
+        :arg: day_name (str): contains name of chosen day
+        :arg: sheet (Spreadsheet.sheet1): contains working sheet
+        :arg: shift_dict (Dict): dict of (shift hours: list of workers names)
+        :arg: found_cells (List[pygsheets.Cell]): contains list of matching cells
+        :arg: time (str): contains shift hours
+        :arg: name (str): contains worker's name
+        :arg: chosen_emoji (str): contains tripled randomly chosen emoji
+        :arg: day_month (str): contains date of requested day in requested format
+
+        :return: result: result string
+        :rtype: str
+        """
+
+        day_name: str = 'Сегодня' if date == datetime.now().day else 'Завтра'
+        sheet: Spreadsheet.sheet1 = super().get_first_sheet()
+        shift_dict: Dict = {}
+
+        found_cells: List[Cell] = sheet.find(
+            self.worker_search_scenarios.get(worker),
+            re.IGNORECASE,
+            matchEntireCell=True,
+            cols=(title_col, title_col)
+        )
+
+        for cell in found_cells:
+            time: str = sheet.get_value((cell.row, date + date_shift))
+            if worker == 'Официанты':
+                name: str = sheet.get_value((cell.row, name_col)).split(' ')[0]
                 if re.match(r'.*стаж[её]р\b.*', cell.value, re.IGNORECASE):
                     name += '(стажёр)'
             else:
-                name = sheet.get_value((cell.row, 2))
+                name: str = sheet.get_value((cell.row, name_col))
             if time and name:
                 if shift_dict.get(time):
                     shift_dict[time] += f', {name}'
                 else:
-                    shift_dict[time] = name
-
-        chosen_emoji = choice(self.emoji_list)
-        result = f'{3 * chosen_emoji} {day_name} {date.strftime("%d.%m")} {3 * chosen_emoji}\n' \
-                 f'{worker.capitalize()}:\n'
+                    shift_dict[time]: Dict = name
+        chosen_emoji: str = choice(self.emoji_list) * 3
+        day_month: str = datetime.now().strftime("%d.%m") if date == datetime.now().day \
+            else (datetime.now() + timedelta(days=1)).strftime("%d.%m")
+        result: str = f'{chosen_emoji} {day_name} {day_month} {chosen_emoji}\n' \
+                      f'{worker}:\n'
 
         for key in sorted(filter(lambda x: x[0].isdigit(), shift_dict.keys()),
                           key=lambda x: int(re.findall(r'^(\d{1,2})', x)[0])):
@@ -67,20 +133,48 @@ class SempreSchedule:
         return result
 
 
-class SempreMenu:
+class SempreMenu(GoogleSheet):
+    """
+    Schedule sheet class. Parent: GoogleSheet
 
-    def __init__(self) -> None:
-        self.google_sheet_client = pygsheets.authorize(service_file='google_credentials.json')
-        self.google_sheet_url = sempre_menu_url
+    :param: menu_url (str): takes in menu google sheet url.
 
-    def search_main_menu(self, dish: str, search_col=2, dish_desc_col=3):
-        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
-        cells = sheet.find(fr'.*{dish}.*', re.IGNORECASE, matchEntireCell=True, cols=(search_col, search_col))
-        if cells:
-            result = ''
-            for cell in cells:
+    :arg: google_sheet_client (Client): contains authorized Client
+    :arg: google_sheet_url (str): contains google sheet url
+    """
+
+    def __init__(self, menu_url: str) -> None:
+        super().__init__(sheet_url=menu_url)
+
+    def search_main_menu(self, dish: str, search_col=2, dish_desc_col=3) -> str:
+        """
+        Method to find dish descriptions in a dish menu Google sheet and compile data in requested output format
+
+        :param: dish (str)
+
+        :keyword: search_col (int)
+        :keyword: dish_desc_col (int)
+
+        :arg: :arg: found_cells (List[pygsheets.Cell]): contains list of matching cells
+
+        :returns: result: result string
+        :rtype: str
+
+        """
+        sheet: Spreadsheet.sheet1 = super().get_first_sheet()
+        found_cells: List[Cell] = sheet.find(
+                                             fr'.*{dish}.*',
+                                             re.IGNORECASE,
+                                             matchEntireCell=True,
+                                             cols=(search_col, search_col)
+                                             )
+
+        if found_cells:
+            result: str = ''
+            for cell in found_cells:
                 dish_description = sheet.get_value((cell.row, dish_desc_col))
                 result += f'Блюдо: {cell.value}\nОписание:\n{dish_description}\n\n'
         else:
-            result = 'Совпадений не найдено.'
+            result: str = 'Совпадений не найдено.'
+
         return result
