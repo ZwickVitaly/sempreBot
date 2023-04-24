@@ -1,8 +1,8 @@
 from bot_loader import dispatcher
 from messages.standard_messages import help_message, start_message, stop_message
-from aiogram.types import Message
+from aiogram.types import Message, ContentTypes
 from aiogram.dispatcher import filters
-from other_api.moscow_weather import get_moscow_weather
+from other_api.open_weather import get_moscow_weather, get_curr_loc_weather
 from keyboards.reply_keyboards import sempre_main_kb, sempre_workers_kb, day_set_kb, sempre_dish_menu
 from aiogram.types import ReplyKeyboardRemove
 from FSM.FSM import SempreFSM
@@ -60,7 +60,7 @@ async def start_handler(message: Message):
 
 
 @dispatcher.message_handler(filters.Text('Погода в Москве'), state=SempreFSM.main_menu)
-async def weather_handler(message: Message):
+async def moscow_weather_handler(message: Message):
     """
     Function to handle weather message
 
@@ -71,6 +71,23 @@ async def weather_handler(message: Message):
     :awaited: message.answer (Awaitable): processed bot answer
     """
     msg: str = get_moscow_weather()
+    await message.answer(msg)
+
+
+@dispatcher.message_handler(content_types=ContentTypes.LOCATION, state=SempreFSM.main_menu)
+async def curr_loc_weather_handler(message: Message):
+    """
+    Function to handle location message for weather data for this location
+
+    :param: message (Message): takes in user message with location
+
+    :arg: msg (str): bot answer message (weather data string)
+
+    :awaited: message.answer (Awaitable): processed bot answer
+    """
+    lat = message.location.latitude
+    lon = message.location.longitude
+    msg = get_curr_loc_weather(lat=lat, lon=lon)
     await message.answer(msg)
 
 

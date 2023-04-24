@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 
 
 def sempre_main_kb() -> ReplyKeyboardMarkup:
@@ -9,7 +9,7 @@ def sempre_main_kb() -> ReplyKeyboardMarkup:
     :rtype: ReplyKeyboardMarkup
     """
     keyboard: ReplyKeyboardMarkup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-    keyboard.add('Смена', 'Меню', 'Погода в Москве')
+    keyboard.add('Смена', 'Меню', 'Погода в Москве', KeyboardButton('Погода в моей локации', request_location=True))
     return keyboard
 
 

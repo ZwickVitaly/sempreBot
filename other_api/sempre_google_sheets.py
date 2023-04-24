@@ -48,7 +48,7 @@ class SempreSchedule(GoogleSheet):
     """
     worker_search_scenarios: Dict = {
         'Хостес': r'.*хостес|оператор|вызывные\b.*',
-        'Официанты': r'.*официант\b.*|.*стаж[её]р\b.*',
+        'Официанты': fr'.*официант\b.*|.*стаж[её]р\b.*',
         'Раннеры': r'.*официанта\b.*',
         'Клининг': r'.*уборщица\b.*',
         'Грузчики': r'.*котломойщик\b.*',
@@ -107,7 +107,7 @@ class SempreSchedule(GoogleSheet):
         for cell in found_cells:
             time: str = sheet.get_value((cell.row, date + date_shift))
             if worker == 'Официанты':
-                name: str = sheet.get_value((cell.row, name_col)).split(' ')[0]
+                name: str = sheet.get_value((cell.row, name_col)).strip().split(' ')[0]
                 if re.match(r'.*стаж[её]р\b.*', cell.value, re.IGNORECASE):
                     name += '(стажёр)'
             else:
