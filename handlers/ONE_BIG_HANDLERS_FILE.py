@@ -203,9 +203,7 @@ async def schedule_workers_handler(message: Message):
                             state=[SempreFSM.today_shift,
                                    SempreFSM.tomorrow_shift,
                                    SempreFSM.menu_choice,
-                                   SempreFSM.main_menu,
-                                   SempreFSM.day_choice,
-                                   None])
+                                   SempreFSM.day_choice])
 async def main_menu_handler(message: Message):
     """
     Function to handle main menu message in any state, except end_state

@@ -1,7 +1,6 @@
 from abc import ABC
 from typing import List, Dict
 from pygsheets.client import Client
-from pygsheets.spreadsheet import Spreadsheet
 from pygsheets import authorize, Cell
 from random import choice
 from datetime import datetime, timedelta
@@ -21,16 +20,6 @@ class GoogleSheet(ABC):
     def __init__(self, sheet_url: str) -> None:
         self.google_sheet_client: Client = authorize(service_file='google_credentials.json')
         self.google_sheet_url: str = sheet_url
-
-    def get_first_sheet(self):
-        """
-        Method to get fist sheet of requested Google sheet
-
-        :return: sheet
-        :rtype: Spreadsheet.sheet1
-        """
-        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
-        return sheet
 
 
 class SempreSchedule(GoogleSheet):
@@ -92,9 +81,8 @@ class SempreSchedule(GoogleSheet):
         :return: result: result string
         :rtype: str
         """
-
+        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
         day_name: str = 'Сегодня' if date == datetime.now().day else 'Завтра'
-        sheet: Spreadsheet.sheet1 = super().get_first_sheet()
         shift_dict: Dict = {}
 
         found_cells: List[Cell] = sheet.find(
@@ -161,7 +149,7 @@ class SempreMenu(GoogleSheet):
         :rtype: str
 
         """
-        sheet: Spreadsheet.sheet1 = super().get_first_sheet()
+        sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
         found_cells: List[Cell] = sheet.find(
                                              fr'.*{dish}.*',
                                              re.IGNORECASE,
