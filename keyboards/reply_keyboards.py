@@ -8,7 +8,7 @@ def sempre_main_kb() -> ReplyKeyboardMarkup:
     :return: keyboard
     :rtype: ReplyKeyboardMarkup
     """
-    keyboard: ReplyKeyboardMarkup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    keyboard: ReplyKeyboardMarkup = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     keyboard.add('Смена', 'Меню', 'Погода в Москве', KeyboardButton('Погода в моей локации', request_location=True))
     return keyboard
 
@@ -20,7 +20,7 @@ def sempre_workers_kb() -> ReplyKeyboardMarkup:
     :return: keyboard
     :rtype: ReplyKeyboardMarkup
     """
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     keyboard.add('< Главное меню', 'Грузчики', 'Хостес', 'Раннеры', 'Клининг', 'Официанты')
     return keyboard
 
@@ -32,7 +32,7 @@ def sempre_dish_menu() -> ReplyKeyboardMarkup:
     :return: keyboard
     :rtype: ReplyKeyboardMarkup
     """
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     keyboard.add('< Главное меню')
     return keyboard
 
@@ -44,6 +44,6 @@ def day_set_kb() -> ReplyKeyboardMarkup:
     :return: keyboard
     :rtype: ReplyKeyboardMarkup
     """
-    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+    keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=False)
     keyboard.add('< Главное меню', 'Сегодня', 'Завтра')
     return keyboard

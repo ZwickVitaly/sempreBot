@@ -1,5 +1,4 @@
 from abc import ABC
-from typing import List, Dict
 from pygsheets.client import Client
 from pygsheets import authorize, Cell
 from random import choice
@@ -35,14 +34,14 @@ class SempreSchedule(GoogleSheet):
     :arg: google_sheet_client (Client): contains authorized Client
     :arg: google_sheet_url (str): contains Google sheet url
     """
-    worker_search_scenarios: Dict = {
+    worker_search_scenarios: dict = {
         'Хостес': r'.*хостес|оператор|вызывные\b.*',
         'Официанты': fr'.*официант\b.*|.*стаж[её]р\b.*',
         'Раннеры': r'.*официанта\b.*',
         'Клининг': r'.*уборщица\b.*',
         'Грузчики': r'.*котломойщик\b.*',
     }
-    emoji_list: List[str] = [
+    emoji_list: list[str] = [
         '\U0001F973', '\U0001F60E', '\U0001F340',
         '\U0001F354', '\U0001F370', '\U0001F379',
         '\U0001F378', '\U0001F377',
@@ -51,6 +50,16 @@ class SempreSchedule(GoogleSheet):
 
     def __init__(self, sempre_schedule_url: str) -> None:
         super().__init__(sheet_url=sempre_schedule_url)
+
+    def set_google_table(self, google_sheet_url: str) -> None:
+        """
+        schedule_sheet setter
+
+        :param: google_table_url (str): takes in url of Google table
+
+        :return: None
+        """
+        self.google_sheet_url: str = google_sheet_url
 
     def search_workers(self,
                        worker: str,
@@ -83,9 +92,9 @@ class SempreSchedule(GoogleSheet):
         """
         sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
         day_name: str = 'Сегодня' if date == datetime.now().day else 'Завтра'
-        shift_dict: Dict = {}
+        shift_dict: dict = {}
 
-        found_cells: List[Cell] = sheet.find(
+        found_cells: list[Cell] = sheet.find(
             self.worker_search_scenarios.get(worker),
             re.IGNORECASE,
             matchEntireCell=True,
@@ -104,7 +113,7 @@ class SempreSchedule(GoogleSheet):
                 if shift_dict.get(time):
                     shift_dict[time] += f', {name}'
                 else:
-                    shift_dict[time]: Dict = name
+                    shift_dict[time]: dict = name
         chosen_emoji: str = choice(self.emoji_list) * 3
         day_month: str = datetime.now().strftime("%d.%m") if date == datetime.now().day \
             else (datetime.now() + timedelta(days=1)).strftime("%d.%m")
@@ -150,7 +159,7 @@ class SempreMenu(GoogleSheet):
 
         """
         sheet = self.google_sheet_client.open_by_url(self.google_sheet_url).sheet1
-        found_cells: List[Cell] = sheet.find(
+        found_cells: list[Cell] = sheet.find(
                                              fr'.*{dish}.*',
                                              re.IGNORECASE,
                                              matchEntireCell=True,
